@@ -30,11 +30,23 @@ https://your-host/?token=YOUR_JWT             # alias
 If no token is present the app renders a clear "No access token" message instead
 of calling the API.
 
+### Company scope
+
+`GetFilteredPage` requires a non-empty `CompanyIds`. The app resolves it from the
+token's own claims, so an access token is normally all you need. If the token
+does not carry one (or you want to override it), pass it in the URL:
+
+```
+https://your-host/?access_token=YOUR_JWT&company_ids=GUID1,GUID2
+```
+
 ### Embedding
 
 ```html
-<iframe src="https://your-host/#access_token=YOUR_JWT"
-        style="width:100%;height:600px;border:0"></iframe>
+<iframe
+  src="https://your-host/#access_token=YOUR_JWT"
+  style="width:100%;height:600px;border:0"
+></iframe>
 ```
 
 ## Getting a test token
@@ -89,8 +101,11 @@ src/app/
     config.ts            API_BASE_URL token
     api-response.ts      { Result, Status, Title, Errors } envelope helpers
     request-error.ts     maps failures to user-facing messages
+    url.ts               reads query/hash params (hash first)
     auth/
       access-token.ts    reads the JWT from the URL + AccessTokenStore
+      jwt.ts             decodes claims, extracts the company scope
+      company-context.ts resolves CompanyIds from the URL or the token
       auth-interceptor.ts attaches the Bearer header to API calls
   features/users/
     user.model.ts        API + view-model types
@@ -104,7 +119,7 @@ src/app/
 
 The app was built against the documented response envelope
 (`{ Result, Status, Title, Errors }`) and the `GetFilteredPage` request schema.
-Because the exact field names of the *response* are not published, two things are
+Because the exact field names of the _response_ are not published, two things are
 handled defensively and isolated to `users-mapper.ts` so they are trivial to
 adjust against the live response:
 

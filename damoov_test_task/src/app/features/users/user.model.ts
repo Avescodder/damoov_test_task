@@ -37,6 +37,7 @@ export interface FilteredUsersResult {
 }
 
 export interface UsersQuery {
+  companyIds: string[];
   pageNumber: number;
   pageSize: number;
   searchTerm?: string;

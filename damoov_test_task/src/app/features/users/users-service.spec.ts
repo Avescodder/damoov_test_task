@@ -36,12 +36,17 @@ describe('UsersService', () => {
   it('posts the filter body and returns a normalized page', () => {
     let result: UsersPage | undefined;
     service
-      .getFilteredPage({ pageNumber: 1, pageSize: 25, searchTerm: ' ann ' })
+      .getFilteredPage({ companyIds: ['co-1'], pageNumber: 1, pageSize: 25, searchTerm: ' ann ' })
       .subscribe((page) => (result = page));
 
     const req = httpMock.expectOne(ENDPOINT);
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toMatchObject({ PageNumber: 1, PageSize: 25, SearchTerm: 'ann' });
+    expect(req.request.body).toMatchObject({
+      CompanyIds: ['co-1'],
+      PageNumber: 1,
+      PageSize: 25,
+      SearchTerm: 'ann',
+    });
 
     req.flush(
       envelope({
@@ -59,18 +64,16 @@ describe('UsersService', () => {
   it('raises the API error message when the envelope reports a failure', () => {
     let error: Error | undefined;
     service
-      .getFilteredPage({ pageNumber: 0, pageSize: 25 })
+      .getFilteredPage({ companyIds: ['co-1'], pageNumber: 0, pageSize: 25 })
       .subscribe({ error: (e: Error) => (error = e) });
 
-    httpMock
-      .expectOne(ENDPOINT)
-      .flush(
-        envelope(null, {
-          Status: 400,
-          Title: 'Bad request',
-          Errors: [{ Message: 'Invalid filter' }],
-        }),
-      );
+    httpMock.expectOne(ENDPOINT).flush(
+      envelope(null, {
+        Status: 400,
+        Title: 'Bad request',
+        Errors: [{ Message: 'Invalid filter' }],
+      }),
+    );
 
     expect(error?.message).toBe('Invalid filter');
   });
