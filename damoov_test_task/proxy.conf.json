@@ -1,0 +1,7 @@
+{
+  "/v1": {
+    "target": "https://user.telematicssdk.com",
+    "secure": true,
+    "changeOrigin": true
+  }
+}
