@@ -1,15 +1,7 @@
 # Users SPA
 
-A small single-page app that lists Telematics SDK users. It is built to be
-embedded into an existing product through an `<iframe>`: the host page passes a
-JWT access token in the iframe URL, and the SPA uses it to call the Management
-API and render a searchable, paginated user table.
 
 ## How it works
-
-```
-host page ──(iframe src with token)──▶  SPA  ──Bearer JWT──▶  /v1/Management/users/GetFilteredPage
-```
 
 1. On start, the app reads the access token from the URL (see below).
 2. An HTTP interceptor attaches it as `Authorization: Bearer <token>` to API calls.
@@ -114,17 +106,3 @@ src/app/
     users-page/          smart component: search, paging, loading/error states
     users-table/         presentational table
 ```
-
-## Notes on the API contract
-
-The app was built against the documented response envelope
-(`{ Result, Status, Title, Errors }`) and the `GetFilteredPage` request schema.
-Because the exact field names of the _response_ are not published, two things are
-handled defensively and isolated to `users-mapper.ts` so they are trivial to
-adjust against the live response:
-
-- the page container (`Users` / `Items` / `Data`, `TotalItems` / `Total` / `TotalCount`);
-- the user item fields (id, name parts, status, created date).
-
-The auth scheme is assumed to be `Authorization: Bearer <jwt>`; if the API
-expects a different header it is a one-line change in `auth-interceptor.ts`.
