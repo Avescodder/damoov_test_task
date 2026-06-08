@@ -1,9 +1,5 @@
 import { computed, Injectable, signal } from '@angular/core';
-
-interface UrlParts {
-  search: string;
-  hash: string;
-}
+import { readParam, UrlParts } from '../url';
 
 const TOKEN_PARAM_NAMES = ['access_token', 'token'] as const;
 
@@ -13,25 +9,7 @@ const TOKEN_PARAM_NAMES = ['access_token', 'token'] as const;
  * stays out of access logs and the Referer header.
  */
 export function readAccessTokenFromUrl(location: UrlParts = window.location): string | null {
-  return readFromParams(stripLeading(location.hash, '#')) ?? readFromParams(location.search);
-}
-
-function readFromParams(raw: string): string | null {
-  if (!raw) {
-    return null;
-  }
-  const params = new URLSearchParams(stripLeading(raw, '?'));
-  for (const name of TOKEN_PARAM_NAMES) {
-    const value = params.get(name)?.trim();
-    if (value) {
-      return value;
-    }
-  }
-  return null;
-}
-
-function stripLeading(value: string, prefix: string): string {
-  return value.startsWith(prefix) ? value.slice(prefix.length) : value;
+  return readParam(location, TOKEN_PARAM_NAMES);
 }
 
 @Injectable({ providedIn: 'root' })

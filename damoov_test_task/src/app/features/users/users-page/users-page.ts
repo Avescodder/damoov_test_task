@@ -2,6 +2,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { catchError, debounceTime, distinctUntilChanged, of, Subject, switchMap, tap } from 'rxjs';
 import { AccessTokenStore } from '../../../core/auth/access-token';
+import { CompanyContext } from '../../../core/auth/company-context';
 import { describeRequestError } from '../../../core/request-error';
 import { UsersPage as UsersPageData, UsersQuery } from '../user.model';
 import { UsersService } from '../users-service';
@@ -19,12 +20,14 @@ const PAGE_SIZES = [10, 25, 50, 100] as const;
 export class UsersPage {
   private readonly usersService = inject(UsersService);
   private readonly tokenStore = inject(AccessTokenStore);
+  private readonly companyContext = inject(CompanyContext);
 
   private readonly searchInput = new Subject<string>();
   private readonly reload = new Subject<void>();
 
   readonly pageSizes = PAGE_SIZES;
   readonly hasToken = this.tokenStore.hasToken;
+  readonly hasCompany = this.companyContext.hasCompany;
 
   readonly pageNumber = signal(0);
   readonly pageSize = signal<number>(PAGE_SIZES[1]);
@@ -87,7 +90,7 @@ export class UsersPage {
         this.loading.set(false);
       });
 
-    if (this.hasToken()) {
+    if (this.hasToken() && this.hasCompany()) {
       this.reload.next();
     }
   }
@@ -122,6 +125,7 @@ export class UsersPage {
 
   private currentQuery(): UsersQuery {
     return {
+      companyIds: this.companyContext.companyIds(),
       pageNumber: this.pageNumber(),
       pageSize: this.pageSize(),
       searchTerm: this.searchTerm(),

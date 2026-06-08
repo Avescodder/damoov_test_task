@@ -4,6 +4,7 @@ const EMPTY = '—';
 
 export function buildGetFilteredPageBody(query: UsersQuery): Record<string, unknown> {
   return {
+    CompanyIds: query.companyIds,
     PageNumber: query.pageNumber,
     PageSize: query.pageSize,
     IncludeAccountInfo: true,

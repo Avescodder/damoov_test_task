@@ -22,11 +22,23 @@ https://your-host/?token=YOUR_JWT             # alias
 If no token is present the app renders a clear "No access token" message instead
 of calling the API.
 
+### Company scope
+
+`GetFilteredPage` requires a non-empty `CompanyIds`. The app resolves it from the
+token's own claims, so an access token is normally all you need. If the token
+does not carry one (or you want to override it), pass it in the URL:
+
+```
+https://your-host/?access_token=YOUR_JWT&company_ids=GUID1,GUID2
+```
+
 ### Embedding
 
 ```html
-<iframe src="https://your-host/#access_token=YOUR_JWT"
-        style="width:100%;height:600px;border:0"></iframe>
+<iframe
+  src="https://your-host/#access_token=YOUR_JWT"
+  style="width:100%;height:600px;border:0"
+></iframe>
 ```
 
 ## Getting a test token
@@ -81,8 +93,11 @@ src/app/
     config.ts            API_BASE_URL token
     api-response.ts      { Result, Status, Title, Errors } envelope helpers
     request-error.ts     maps failures to user-facing messages
+    url.ts               reads query/hash params (hash first)
     auth/
       access-token.ts    reads the JWT from the URL + AccessTokenStore
+      jwt.ts             decodes claims, extracts the company scope
+      company-context.ts resolves CompanyIds from the URL or the token
       auth-interceptor.ts attaches the Bearer header to API calls
   features/users/
     user.model.ts        API + view-model types
@@ -91,4 +106,3 @@ src/app/
     users-page/          smart component: search, paging, loading/error states
     users-table/         presentational table
 ```
-

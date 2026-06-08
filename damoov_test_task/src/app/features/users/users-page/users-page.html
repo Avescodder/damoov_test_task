@@ -16,6 +16,16 @@
         </p>
       </div>
     </div>
+  } @else if (!hasCompany()) {
+    <div class="flex flex-1 items-center justify-center">
+      <div class="max-w-md rounded-lg border border-amber-200 bg-amber-50 p-6 text-center">
+        <p class="font-medium text-amber-800">No company selected</p>
+        <p class="mt-1 text-sm text-amber-700">
+          The access token does not carry a company id. Add
+          <code class="break-all">&amp;company_ids=COMPANY_GUID</code> to the URL.
+        </p>
+      </div>
+    </div>
   } @else {
     <div class="flex flex-wrap items-center gap-3">
       <input
