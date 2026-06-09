@@ -2,8 +2,7 @@
 
 A small Angular SPA that lists users from the Telematics SDK Management API. It
 is designed to be embedded in an iframe: the host page supplies the JWT through
-the URL, and the widget's height is driven entirely by its content (no
-`position: fixed`, no `100vh`).
+the URL, and the widget's height is driven entirely by its content.
 
 ## Run
 
@@ -57,11 +56,10 @@ The widget flows to its content height, works down to a 320px width, and below
 curl --request POST \
   --url 'https://user.telematicssdk.com/v1/Auth/Login' \
   --header 'content-type: application/json' \
-  --data '{"LoginFields":"{\"email\":\"\"}","Password":""}'
+  --data '{"LoginFields":"{\"email\":\"YOUR_EMAIL\"}","Password":"YOUR_PASSWORD"}'
 ```
 
-The token is at `Result.AccessToken.Token`. Never commit real credentials — pass
-them only at request time.
+The token is at `Result.AccessToken.Token`.
 
 ## API
 
