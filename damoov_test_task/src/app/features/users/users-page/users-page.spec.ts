@@ -1,27 +1,29 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Observable, of, throwError } from 'rxjs';
 import { AccessTokenStore } from '../../../core/auth/access-token';
-import { UsersPage as UsersPageData } from '../user.model';
+import { User, UsersPage as UsersPageData } from '../user.model';
 import { UsersService } from '../users-service';
 import { UsersPage } from './users-page';
 
+function makeUser(overrides: Partial<User> = {}): User {
+  return {
+    DeviceToken: 'device-1',
+    DateCreated: '2026-05-30T08:50:21.365958',
+    Status: 'Active',
+    ActivityStatus: 'No Data',
+    UserProfile: { FirstName: null, LastName: null, Email: null, Phone: null, ImageUrl: null },
+    MobileDevice: { DeviceModel: null, OsType: '', VirtualImei: '0462' },
+    AccountInfo: { CompanyName: 'Damoov', ApplicationName: 'iOS SDK[UAT]', InstanceName: 'Common' },
+    UserFields: [{ ClientId: 'Android Test Samsung', EnableTracking: true, Enabled: true }],
+    ...overrides,
+  };
+}
+
 const samplePage: UsersPageData = {
-  rows: [
-    {
-      id: 'device-1',
-      name: 'Ann Lee',
-      email: 'ann@example.com',
-      phone: '—',
-      status: 'Active',
-      location: 'Berlin, DE',
-      createdAt: '2026-06-08',
-      raw: {},
-    },
-  ],
+  users: [makeUser()],
   totalUsers: 1,
-  currentPage: 0,
   totalPages: 1,
-  pageSize: 25,
+  currentPage: 1,
   hasPrevious: false,
   hasNext: false,
 };
@@ -45,17 +47,24 @@ function text(fixture: ComponentFixture<UsersPage>): string {
 }
 
 describe('UsersPage', () => {
-  it('shows guidance and skips the request when no token is provided', () => {
+  it('shows the access-token message and skips the request when no token is provided', () => {
     const { fixture, service } = createComponent(false, of(samplePage));
     expect(service.getFilteredPage).not.toHaveBeenCalled();
     expect(text(fixture)).toContain('No access token');
+    expect(text(fixture)).toContain('?access_token=<jwt>');
   });
 
-  it('loads and renders users when a token is present', () => {
+  it('loads users and shows the total when a token is present', () => {
     const { fixture, service } = createComponent(true, of(samplePage));
     expect(service.getFilteredPage).toHaveBeenCalledTimes(1);
-    expect(text(fixture)).toContain('Ann Lee');
-    expect(text(fixture)).toContain('1–1 of 1');
+    expect(fixture.componentInstance.users().length).toBe(1);
+    expect(text(fixture)).toContain('Total: 1 users');
+    expect(text(fixture)).toContain('Android Test Samsung');
+  });
+
+  it('renders the empty state when there are no users', () => {
+    const { fixture } = createComponent(true, of({ ...samplePage, users: [], totalUsers: 0 }));
+    expect(text(fixture)).toContain('No users found');
   });
 
   it('surfaces a friendly error and offers a retry', () => {
@@ -70,12 +79,21 @@ describe('UsersPage', () => {
   it('advances to the next page and refetches', () => {
     const { fixture, service } = createComponent(
       true,
-      of({ ...samplePage, totalUsers: 100, totalPages: 4, hasNext: true }),
+      of({ ...samplePage, totalUsers: 100, totalPages: 5, currentPage: 1, hasNext: true }),
     );
     fixture.componentInstance.nextPage();
-    expect(fixture.componentInstance.pageNumber()).toBe(1);
+    expect(fixture.componentInstance.pageNumber()).toBe(1); // server echoes CurrentPage
     expect(service.getFilteredPage).toHaveBeenLastCalledWith(
-      expect.objectContaining({ pageNumber: 1 }),
+      expect.objectContaining({ pageNumber: 2 }),
+    );
+  });
+
+  it('resets to page 1 when the page size changes', () => {
+    const { fixture, service } = createComponent(true, of(samplePage));
+    fixture.componentInstance.changePageSize(50);
+    expect(fixture.componentInstance.pageSize()).toBe(50);
+    expect(service.getFilteredPage).toHaveBeenLastCalledWith(
+      expect.objectContaining({ pageNumber: 1, pageSize: 50 }),
     );
   });
 });

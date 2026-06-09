@@ -1,12 +1,22 @@
 @import 'tailwindcss';
 
+/*
+ * The app is designed to be embedded in an iframe, so its height must be
+ * driven by content — no `height: 100%`/`100vh` and no `position: fixed`
+ * anywhere. The host sizes the iframe; we just flow naturally.
+ */
 html,
 body {
-  height: 100%;
   margin: 0;
 }
 
 body {
   background-color: #f8fafc;
   color: #0f172a;
+  font-family:
+    system-ui,
+    -apple-system,
+    'Segoe UI',
+    Roboto,
+    sans-serif;
 }

@@ -1,71 +1,34 @@
-import {
-  FilteredUsersResult,
-  ManagedUser,
-  UserProfile,
-  UserRow,
-  UsersPage,
-  UsersQuery,
-} from './user.model';
+import { APPLICATION_ID } from '../../core/config';
+import { FilteredUsersResult, GetUsersRequest, UsersPage, UsersQuery } from './user.model';
 
-const EMPTY = '—';
-
-export function buildGetFilteredPageBody(query: UsersQuery): Record<string, unknown> {
+/**
+ * Builds the exact GetFilteredPage request body. `ApplicationIds` is mandatory —
+ * the endpoint returns nothing useful without it. `CompanyIds`/`InstanceIds` are
+ * intentionally omitted; they are not needed for this scope.
+ */
+export function buildGetFilteredPageBody(query: UsersQuery): GetUsersRequest {
+  const searchTerm = query.searchTerm?.trim();
   return {
+    ApplicationIds: [APPLICATION_ID],
     PageNumber: query.pageNumber,
     PageSize: query.pageSize,
     IncludeAccountInfo: true,
-    SearchTerm: query.searchTerm?.trim() || undefined,
+    ...(searchTerm ? { SearchTerm: searchTerm } : {}),
   };
 }
 
+/** Maps the API's paged container into the view-model the page drives. */
 export function normalizeUsersPage(
   result: FilteredUsersResult | null | undefined,
   query: UsersQuery,
 ): UsersPage {
-  const rows = (result?.Users ?? []).map(toUserRow);
+  const users = result?.Users ?? [];
   return {
-    rows,
-    totalUsers: result?.TotalUsers ?? rows.length,
-    currentPage: result?.CurrentPage ?? query.pageNumber,
+    users,
+    totalUsers: result?.TotalUsers ?? users.length,
     totalPages: result?.TotalPages ?? 0,
-    pageSize: query.pageSize,
-    hasPrevious: result?.HasPreviousPage ?? query.pageNumber > 0,
+    currentPage: result?.CurrentPage ?? query.pageNumber,
+    hasPrevious: result?.HasPreviousPage ?? query.pageNumber > 1,
     hasNext: result?.HasNextPage ?? false,
   };
-}
-
-export function toUserRow(user: ManagedUser): UserRow {
-  const profile = user.UserProfile ?? {};
-  return {
-    id: text(user.DeviceToken ?? user.IdentityId),
-    name: displayName(user, profile),
-    email: text(profile.Email),
-    phone: text(profile.Phone),
-    status: text(user.Status ?? user.ActivityStatus),
-    location: joinTruthy([profile.City, profile.Country], ', '),
-    createdAt: formatDate(user.DateCreated),
-    raw: user,
-  };
-}
-
-export function formatDate(value: unknown): string {
-  if (typeof value !== 'string' || !value) {
-    return EMPTY;
-  }
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? EMPTY : date.toISOString().slice(0, 10);
-}
-
-function displayName(user: ManagedUser, profile: UserProfile): string {
-  const composed = joinTruthy([profile.FirstName, profile.LastName], ' ');
-  return composed !== EMPTY ? composed : text(profile.Nickname ?? user.DeviceToken);
-}
-
-function joinTruthy(parts: Array<string | undefined>, separator: string): string {
-  const joined = parts.filter(Boolean).join(separator).trim();
-  return joined || EMPTY;
-}
-
-function text(value: unknown): string {
-  return value === undefined || value === null || value === '' ? EMPTY : String(value);
 }

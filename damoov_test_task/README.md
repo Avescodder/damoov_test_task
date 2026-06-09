@@ -1,107 +1,113 @@
-# Users SPA
+# User List Widget
 
-## How it works
+A small Angular SPA that lists users from the Telematics SDK Management API. It
+is designed to be embedded in an iframe: the host page supplies the JWT through
+the URL, and the widget's height is driven entirely by its content (no
+`position: fixed`, no `100vh`).
 
-1. On start, the app reads the access token from the URL (see below).
-2. An HTTP interceptor attaches it as `Authorization: Bearer <token>` to API calls.
-3. `UsersService` posts to `/v1/Management/users/GetFilteredPage` and the response
-   is normalized into display-ready rows.
+## Run
 
-### Passing the token
+> Requires Node `>= 22.22.3` (Angular 22).
 
-The token is read from the URL, hash first (preferred — it is never sent to the
-server or logged), then the query string:
-
-```
-https://your-host/#access_token=YOUR_JWT
-https://your-host/?access_token=YOUR_JWT      # also supported
-https://your-host/?token=YOUR_JWT             # alias
+```bash
+npm install
+npm run dev
 ```
 
-If no token is present the app renders a clear "No access token" message instead
-of calling the API.
+`npm run dev` starts the Angular dev server on http://localhost:4200 and proxies
+`/v1` to `https://user.telematicssdk.com` (see `proxy.conf.json`), so the browser
+talks to the same origin and there are no CORS issues during development. Open:
 
-### Embedding
+```
+http://localhost:4200/?access_token=<jwt>
+```
+
+Other scripts:
+
+```bash
+npm run build   # production bundle in dist/
+npm test        # unit tests (Vitest)
+```
+
+## Auth
+
+The widget reads the JWT from the URL query string:
+
+```js
+new URLSearchParams(window.location.search).get('access_token');
+```
+
+and sends it as `Authorization: Bearer <token>` on every API call. If no token is
+present it renders an error state:
+
+> No access token. Pass `?access_token=<jwt>` in the URL.
+
+## Embed via iframe
 
 ```html
-<iframe
-  src="https://your-host/#access_token=YOUR_JWT"
-  style="width:100%;height:600px;border:0"
-></iframe>
+<iframe src="http://your-host/users?access_token=<jwt>" width="100%" style="border:none;"></iframe>
 ```
 
-## Getting a test token
+The widget flows to its content height, works down to a 320px width, and below
+640px the Device, IMEI and Application columns are hidden to fit narrow frames.
 
-The API is not called to log in (the host supplies the token), but you can mint
-one for local testing with your own Damoov credentials:
+## Get a test token
 
 ```bash
 curl --request POST \
   --url 'https://user.telematicssdk.com/v1/Auth/Login' \
-  --header 'accept: application/json' \
   --header 'content-type: application/json' \
-  --data '{"LoginFields":"{\"email\":\"YOUR_EMAIL\"}","Password":"YOUR_PASSWORD"}'
+  --data '{"LoginFields":"{\"email\":\"\"}","Password":""}'
 ```
 
-Copy `Result.AccessToken.Token` from the response and put it in the URL. Never
-commit real credentials — pass them only at request time.
+The token is at `Result.AccessToken.Token`. Never commit real credentials — pass
+them only at request time.
 
-## Run it
+## API
 
-Requires Node `>= 22.22.3` (Angular 22).
+The widget posts to:
 
-```bash
-npm install
-npm start          # http://localhost:4200/?access_token=YOUR_JWT
+```
+POST https://user.telematicssdk.com/v1/Management/users/GetFilteredPage
 ```
 
-`npm start` proxies `/v1` to `https://user.telematicssdk.com` (see
-`proxy.conf.json`), so the browser talks to the same origin and there are no CORS
-issues during development.
+with the body (page number/size change with pagination):
 
-```bash
-npm test           # unit tests (Vitest)
-npm run build      # production bundle in dist/
+```json
+{
+  "ApplicationIds": ["4603BEAE-E28A-4E6C-8FF9-3CA6DF360FD3"],
+  "PageNumber": 1,
+  "PageSize": 20,
+  "IncludeAccountInfo": true
+}
 ```
-
-## Configuration
-
-The API origin is an injection token, `API_BASE_URL` (`src/app/core/config.ts`),
-empty by default so requests are same-origin:
-
-- **Local dev** — the dev-server proxy forwards `/v1` to the API.
-- **Production / iframe** — either serve the SPA behind a gateway that proxies
-  `/v1` to the API, or set `API_BASE_URL` to `https://user.telematicssdk.com`
-  (the API allows cross-origin calls from the browser).
 
 ## Project layout
 
 ```
 src/app/
   core/
-    config.ts            API_BASE_URL token
-    api-response.ts      { Result, Status, Title, Errors } envelope helpers
-    request-error.ts     maps failures to user-facing messages
-    url.ts               reads query/hash params (hash first)
+    config.ts             API_BASE_URL + APPLICATION_ID
+    api-response.ts        { Result, Status, Errors } envelope helpers
+    request-error.ts       maps failures to user-facing messages
+    url.ts                 reads the token from the URL query string
     auth/
-      access-token.ts    reads the JWT from the URL + AccessTokenStore
-      auth-interceptor.ts attaches the Bearer header to API calls
+      access-token.ts      AccessTokenStore (reads the JWT from the URL)
+      auth-interceptor.ts  attaches the Bearer header to API calls
   features/users/
-    user.model.ts        API + view-model types
-    users-mapper.ts      builds the request body, normalizes the response
-    users-service.ts     GetFilteredPage call
-    users-page/          smart component: search, paging, loading/error states
-    users-table/         presentational table
+    user.model.ts          API + view-model types
+    users-mapper.ts        builds the request body, normalizes the response
+    users-service.ts       GetFilteredPage call
+    users-page/            smart component: signals, paging, states
+    users-table/           presentational table (8 columns)
 ```
 
-## Notes on the API contract
+## Notes
 
-Requests and responses follow the `GetFilteredPage` Swagger schema: the envelope
-is `{ Result, Status, Title, Errors }`, the page is
-`{ Users, TotalUsers, CurrentPage, TotalPages, HasPreviousPage, HasNextPage }`,
-and each user nests its display fields under `UserProfile` and its scope under
-`AccountInfo`. Mapping to the flat row view model is isolated in
-`users-mapper.ts`.
-
-The auth scheme is `Authorization: Bearer <jwt>`; if the API expects a different
-header it is a one-line change in `auth-interceptor.ts`.
+- The component uses Angular signals (`signal`, `computed`) for all state:
+  `users`, `loading`, `error`, `pageNumber`, `pageSize`, `totalUsers`,
+  `totalPages`, `hasNext`, `hasPrev`.
+- The API origin is an injection token, `API_BASE_URL` (`src/app/core/config.ts`),
+  empty by default so requests are same-origin. In production either serve the
+  SPA behind a gateway that proxies `/v1`, or set `API_BASE_URL` to
+  `https://user.telematicssdk.com`.

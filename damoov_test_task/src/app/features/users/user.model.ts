@@ -1,71 +1,79 @@
+/**
+ * Types for the `Management/users/GetFilteredPage` endpoint. The shapes mirror
+ * the API exactly: every `UserProfile` and `MobileDevice` field can be null, and
+ * `UserFields` can be null as a whole.
+ */
+
 export interface UserProfile {
-  FirstName?: string;
-  LastName?: string;
-  Nickname?: string;
-  Email?: string;
-  Phone?: string;
-  Country?: string;
-  District?: string;
-  City?: string;
-  Address?: string;
-  ImageUrl?: string;
+  FirstName: string | null;
+  LastName: string | null;
+  Email: string | null;
+  Phone: string | null;
+  ImageUrl: string | null;
+}
+
+export interface MobileDevice {
+  DeviceModel: string | null;
+  OsType: string;
+  VirtualImei: string | null;
 }
 
 export interface AccountInfo {
-  CompanyId?: string;
-  CompanyName?: string;
-  ApplicationId?: string;
-  ApplicationName?: string;
-  InstanceId?: string;
-  InstanceName?: string;
+  CompanyName: string;
+  ApplicationName: string;
+  InstanceName: string;
 }
 
-/** A user item as returned by GetFilteredPage. Identity is the DeviceToken; the
- * display fields live under UserProfile and the scope under AccountInfo. */
-export interface ManagedUser {
-  DeviceToken?: string;
-  IdentityId?: string;
-  DateCreated?: string;
-  Status?: string;
-  ActivityStatus?: string;
-  UserProfile?: UserProfile;
-  AccountInfo?: AccountInfo;
+export interface UserField {
+  ClientId: string;
+  EnableTracking: boolean;
+  Enabled: boolean;
 }
 
-/** Raw paged container returned inside the API envelope's Result. */
+/** A single user as returned by GetFilteredPage. Identity is the DeviceToken. */
+export interface User {
+  DeviceToken: string;
+  DateCreated: string;
+  Status: 'Active' | 'Inactive';
+  ActivityStatus: string;
+  UserProfile: UserProfile;
+  MobileDevice: MobileDevice;
+  AccountInfo: AccountInfo;
+  UserFields: UserField[] | null;
+}
+
+/** Paged container returned inside the API envelope's `Result`. */
 export interface FilteredUsersResult {
-  Users?: ManagedUser[];
-  TotalUsers?: number;
-  TotalPages?: number;
-  CurrentPage?: number;
-  HasPreviousPage?: boolean;
-  HasNextPage?: boolean;
+  Users: User[];
+  HasPreviousPage: boolean;
+  HasNextPage: boolean;
+  TotalUsers: number;
+  TotalPages: number;
+  CurrentPage: number;
 }
 
+/** Request body for GetFilteredPage. */
+export interface GetUsersRequest {
+  ApplicationIds: string[];
+  PageNumber: number;
+  PageSize: number;
+  IncludeAccountInfo: boolean;
+  SearchTerm?: string;
+}
+
+/** What the page component drives the table and pagination with. */
 export interface UsersQuery {
   pageNumber: number;
   pageSize: number;
   searchTerm?: string;
 }
 
-/** Flattened, display-ready row. `raw` keeps the original item for drill-down. */
-export interface UserRow {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  status: string;
-  location: string;
-  createdAt: string;
-  raw: ManagedUser;
-}
-
+/** Normalized page: the user rows plus the pagination state. */
 export interface UsersPage {
-  rows: UserRow[];
+  users: User[];
   totalUsers: number;
-  currentPage: number;
   totalPages: number;
-  pageSize: number;
+  currentPage: number;
   hasPrevious: boolean;
   hasNext: boolean;
 }

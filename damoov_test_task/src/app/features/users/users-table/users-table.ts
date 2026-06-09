@@ -1,22 +1,47 @@
+import { DatePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input } from '@angular/core';
-import { UserRow } from '../user.model';
+import { User } from '../user.model';
+
+const EMPTY = '—';
 
 @Component({
   selector: 'app-users-table',
   changeDetection: ChangeDetectionStrategy.OnPush,
+  imports: [DatePipe],
   templateUrl: './users-table.html',
 })
 export class UsersTable {
-  readonly rows = input.required<UserRow[]>();
+  readonly users = input.required<User[]>();
 
-  statusClass(status: string): string {
-    const normalized = status.toLowerCase();
-    if (normalized === 'active') {
-      return 'bg-emerald-50 text-emerald-700 ring-emerald-600/20';
-    }
-    if (normalized === 'inactive' || normalized === 'deleted') {
-      return 'bg-rose-50 text-rose-700 ring-rose-600/20';
-    }
-    return 'bg-slate-100 text-slate-600 ring-slate-500/20';
+  readonly empty = EMPTY;
+
+  /** First 8 characters of the device token; the full value goes in `title`. */
+  tokenShort(user: User): string {
+    return user.DeviceToken ? user.DeviceToken.slice(0, 8) : EMPTY;
+  }
+
+  clientId(user: User): string {
+    return user.UserFields?.[0]?.ClientId || EMPTY;
+  }
+
+  /** Prefer the human-readable model, fall back to OS type, then a dash. */
+  device(user: User): string {
+    return user.MobileDevice?.DeviceModel || user.MobileDevice?.OsType || EMPTY;
+  }
+
+  imei(user: User): string {
+    return user.MobileDevice?.VirtualImei || EMPTY;
+  }
+
+  application(user: User): string {
+    return user.AccountInfo?.ApplicationName || EMPTY;
+  }
+
+  activity(user: User): string {
+    return user.ActivityStatus || EMPTY;
+  }
+
+  isActive(user: User): boolean {
+    return user.Status === 'Active';
   }
 }
