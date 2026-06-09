@@ -1,39 +1,45 @@
-/** A user item as returned by GetFilteredPage. Fields are optional because the
- * payload depends on the filter (e.g. IncludeAccountInfo); the index signature
- * keeps the mapper free to read alternative spellings without fighting types. */
-export interface ManagedUser {
-  Id?: string;
-  UserId?: string;
-  DeviceToken?: string;
+export interface UserProfile {
   FirstName?: string;
   LastName?: string;
   Nickname?: string;
   Email?: string;
   Phone?: string;
-  ActivityStatus?: string;
-  Status?: string;
-  DateCreated?: string;
-  CreatedAt?: string;
   Country?: string;
+  District?: string;
   City?: string;
-  CompanyId?: string;
-  ApplicationId?: string;
-  InstanceId?: string;
-  RtdEnabled?: boolean;
-  [key: string]: unknown;
+  Address?: string;
+  ImageUrl?: string;
 }
 
-/** Raw paged container. The array/total keys are normalized by the mapper. */
+export interface AccountInfo {
+  CompanyId?: string;
+  CompanyName?: string;
+  ApplicationId?: string;
+  ApplicationName?: string;
+  InstanceId?: string;
+  InstanceName?: string;
+}
+
+/** A user item as returned by GetFilteredPage. Identity is the DeviceToken; the
+ * display fields live under UserProfile and the scope under AccountInfo. */
+export interface ManagedUser {
+  DeviceToken?: string;
+  IdentityId?: string;
+  DateCreated?: string;
+  Status?: string;
+  ActivityStatus?: string;
+  UserProfile?: UserProfile;
+  AccountInfo?: AccountInfo;
+}
+
+/** Raw paged container returned inside the API envelope's Result. */
 export interface FilteredUsersResult {
   Users?: ManagedUser[];
-  Items?: ManagedUser[];
-  Data?: ManagedUser[];
-  TotalItems?: number;
-  Total?: number;
-  TotalCount?: number;
-  PageNumber?: number;
-  Page?: number;
-  PageSize?: number;
+  TotalUsers?: number;
+  TotalPages?: number;
+  CurrentPage?: number;
+  HasPreviousPage?: boolean;
+  HasNextPage?: boolean;
 }
 
 export interface UsersQuery {
@@ -59,7 +65,10 @@ export interface UserRow {
 
 export interface UsersPage {
   rows: UserRow[];
-  total: number;
-  pageNumber: number;
+  totalUsers: number;
+  currentPage: number;
+  totalPages: number;
   pageSize: number;
+  hasPrevious: boolean;
+  hasNext: boolean;
 }

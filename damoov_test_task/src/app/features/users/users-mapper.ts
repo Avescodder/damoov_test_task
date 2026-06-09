@@ -1,4 +1,11 @@
-import { FilteredUsersResult, ManagedUser, UserRow, UsersPage, UsersQuery } from './user.model';
+import {
+  FilteredUsersResult,
+  ManagedUser,
+  UserProfile,
+  UserRow,
+  UsersPage,
+  UsersQuery,
+} from './user.model';
 
 const EMPTY = '—';
 
@@ -18,25 +25,28 @@ export function normalizeUsersPage(
   result: FilteredUsersResult | null | undefined,
   query: UsersQuery,
 ): UsersPage {
-  const users = result?.Users ?? result?.Items ?? result?.Data ?? [];
-  const rows = users.map(toUserRow);
+  const rows = (result?.Users ?? []).map(toUserRow);
   return {
     rows,
-    total: result?.TotalItems ?? result?.Total ?? result?.TotalCount ?? rows.length,
-    pageNumber: result?.PageNumber ?? result?.Page ?? query.pageNumber,
-    pageSize: result?.PageSize ?? query.pageSize,
+    totalUsers: result?.TotalUsers ?? rows.length,
+    currentPage: result?.CurrentPage ?? query.pageNumber,
+    totalPages: result?.TotalPages ?? 0,
+    pageSize: query.pageSize,
+    hasPrevious: result?.HasPreviousPage ?? query.pageNumber > 0,
+    hasNext: result?.HasNextPage ?? false,
   };
 }
 
 export function toUserRow(user: ManagedUser): UserRow {
+  const profile = user.UserProfile ?? {};
   return {
-    id: text(pick(user, 'Id', 'UserId', 'DeviceToken')),
-    name: fullName(user),
-    email: text(user.Email),
-    phone: text(user.Phone),
-    status: text(pick(user, 'ActivityStatus', 'Status')),
-    location: joinTruthy([user.City, user.Country], ', '),
-    createdAt: formatDate(pick(user, 'DateCreated', 'CreatedAt')),
+    id: text(user.DeviceToken ?? user.IdentityId),
+    name: displayName(user, profile),
+    email: text(profile.Email),
+    phone: text(profile.Phone),
+    status: text(user.Status ?? user.ActivityStatus),
+    location: joinTruthy([profile.City, profile.Country], ', '),
+    createdAt: formatDate(user.DateCreated),
     raw: user,
   };
 }
@@ -49,24 +59,14 @@ export function formatDate(value: unknown): string {
   return Number.isNaN(date.getTime()) ? EMPTY : date.toISOString().slice(0, 10);
 }
 
-function fullName(user: ManagedUser): string {
-  const composed = joinTruthy([user.FirstName, user.LastName], ' ');
-  return composed !== EMPTY ? composed : text(pick(user, 'Nickname', 'DeviceToken'));
+function displayName(user: ManagedUser, profile: UserProfile): string {
+  const composed = joinTruthy([profile.FirstName, profile.LastName], ' ');
+  return composed !== EMPTY ? composed : text(profile.Nickname ?? user.DeviceToken);
 }
 
 function joinTruthy(parts: Array<string | undefined>, separator: string): string {
   const joined = parts.filter(Boolean).join(separator).trim();
   return joined || EMPTY;
-}
-
-function pick(source: ManagedUser, ...keys: string[]): unknown {
-  for (const key of keys) {
-    const value = source[key];
-    if (value !== undefined && value !== null && value !== '') {
-      return value;
-    }
-  }
-  return undefined;
 }
 
 function text(value: unknown): string {
