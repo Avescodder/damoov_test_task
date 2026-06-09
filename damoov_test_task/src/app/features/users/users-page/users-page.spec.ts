@@ -1,7 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Observable, of, throwError } from 'rxjs';
 import { AccessTokenStore } from '../../../core/auth/access-token';
-import { CompanyContext } from '../../../core/auth/company-context';
 import { UsersPage as UsersPageData } from '../user.model';
 import { UsersService } from '../users-service';
 import { UsersPage } from './users-page';
@@ -27,20 +26,12 @@ const samplePage: UsersPageData = {
   hasNext: false,
 };
 
-function createComponent(
-  hasToken: boolean,
-  response: Observable<UsersPageData>,
-  hasCompany = true,
-) {
+function createComponent(hasToken: boolean, response: Observable<UsersPageData>) {
   const service = { getFilteredPage: vi.fn(() => response) };
   TestBed.configureTestingModule({
     imports: [UsersPage],
     providers: [
       { provide: AccessTokenStore, useValue: { hasToken: () => hasToken, token: () => 'jwt' } },
-      {
-        provide: CompanyContext,
-        useValue: { hasCompany: () => hasCompany, companyIds: () => (hasCompany ? ['co-1'] : []) },
-      },
       { provide: UsersService, useValue: service },
     ],
   });
@@ -58,12 +49,6 @@ describe('UsersPage', () => {
     const { fixture, service } = createComponent(false, of(samplePage));
     expect(service.getFilteredPage).not.toHaveBeenCalled();
     expect(text(fixture)).toContain('No access token');
-  });
-
-  it('asks for a company id when the token carries none', () => {
-    const { fixture, service } = createComponent(true, of(samplePage), false);
-    expect(service.getFilteredPage).not.toHaveBeenCalled();
-    expect(text(fixture)).toContain('No company selected');
   });
 
   it('loads and renders users when a token is present', () => {

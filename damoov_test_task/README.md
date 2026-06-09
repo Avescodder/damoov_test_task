@@ -1,6 +1,5 @@
 # Users SPA
 
-
 ## How it works
 
 1. On start, the app reads the access token from the URL (see below).
@@ -21,19 +20,6 @@ https://your-host/?token=YOUR_JWT             # alias
 
 If no token is present the app renders a clear "No access token" message instead
 of calling the API.
-
-### Company scope
-
-`GetFilteredPage` requires a non-empty `CompanyIds`. The app reads it from a
-`company_ids` URL parameter, falling back to the token claims when present.
-Damoov's access tokens (Auth0) do not carry a company id, so pass it explicitly:
-
-```
-https://your-host/?access_token=YOUR_JWT&company_ids=GUID1,GUID2
-```
-
-Find the GUID in the Damoov dashboard, or copy it from the `GetFilteredPage`
-request payload on the dashboard's Users page (DevTools → Network).
 
 ### Embedding
 
@@ -99,8 +85,6 @@ src/app/
     url.ts               reads query/hash params (hash first)
     auth/
       access-token.ts    reads the JWT from the URL + AccessTokenStore
-      jwt.ts             decodes claims, extracts the company scope
-      company-context.ts resolves CompanyIds from the URL or the token
       auth-interceptor.ts attaches the Bearer header to API calls
   features/users/
     user.model.ts        API + view-model types
@@ -109,6 +93,7 @@ src/app/
     users-page/          smart component: search, paging, loading/error states
     users-table/         presentational table
 ```
+
 ## Notes on the API contract
 
 Requests and responses follow the `GetFilteredPage` Swagger schema: the envelope
