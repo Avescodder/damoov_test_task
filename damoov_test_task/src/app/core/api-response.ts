@@ -1,5 +1,5 @@
 export interface ApiError {
-  Code?: string | number;
+  Key?: string;
   Message?: string;
 }
 

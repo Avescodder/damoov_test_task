@@ -24,13 +24,16 @@ of calling the API.
 
 ### Company scope
 
-`GetFilteredPage` requires a non-empty `CompanyIds`. The app resolves it from the
-token's own claims, so an access token is normally all you need. If the token
-does not carry one (or you want to override it), pass it in the URL:
+`GetFilteredPage` requires a non-empty `CompanyIds`. The app reads it from a
+`company_ids` URL parameter, falling back to the token claims when present.
+Damoov's access tokens (Auth0) do not carry a company id, so pass it explicitly:
 
 ```
 https://your-host/?access_token=YOUR_JWT&company_ids=GUID1,GUID2
 ```
+
+Find the GUID in the Damoov dashboard, or copy it from the `GetFilteredPage`
+request payload on the dashboard's Users page (DevTools → Network).
 
 ### Embedding
 
@@ -106,3 +109,14 @@ src/app/
     users-page/          smart component: search, paging, loading/error states
     users-table/         presentational table
 ```
+## Notes on the API contract
+
+Requests and responses follow the `GetFilteredPage` Swagger schema: the envelope
+is `{ Result, Status, Title, Errors }`, the page is
+`{ Users, TotalUsers, CurrentPage, TotalPages, HasPreviousPage, HasNextPage }`,
+and each user nests its display fields under `UserProfile` and its scope under
+`AccountInfo`. Mapping to the flat row view model is isolated in
+`users-mapper.ts`.
+
+The auth scheme is `Authorization: Bearer <jwt>`; if the API expects a different
+header it is a one-line change in `auth-interceptor.ts`.

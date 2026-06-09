@@ -50,14 +50,15 @@ describe('UsersService', () => {
 
     req.flush(
       envelope({
-        Users: [{ FirstName: 'Ann', LastName: 'Lee' }],
-        TotalItems: 1,
-        PageNumber: 1,
-        PageSize: 25,
+        Users: [{ DeviceToken: 'd1', UserProfile: { FirstName: 'Ann', LastName: 'Lee' } }],
+        TotalUsers: 1,
+        CurrentPage: 1,
+        HasPreviousPage: true,
+        HasNextPage: false,
       }),
     );
 
-    expect(result?.total).toBe(1);
+    expect(result?.totalUsers).toBe(1);
     expect(result?.rows[0].name).toBe('Ann Lee');
   });
 

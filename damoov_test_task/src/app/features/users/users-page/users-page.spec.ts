@@ -19,9 +19,12 @@ const samplePage: UsersPageData = {
       raw: {},
     },
   ],
-  total: 1,
-  pageNumber: 0,
+  totalUsers: 1,
+  currentPage: 0,
+  totalPages: 1,
   pageSize: 25,
+  hasPrevious: false,
+  hasNext: false,
 };
 
 function createComponent(
@@ -80,7 +83,10 @@ describe('UsersPage', () => {
   });
 
   it('advances to the next page and refetches', () => {
-    const { fixture, service } = createComponent(true, of({ ...samplePage, total: 100 }));
+    const { fixture, service } = createComponent(
+      true,
+      of({ ...samplePage, totalUsers: 100, totalPages: 4, hasNext: true }),
+    );
     fixture.componentInstance.nextPage();
     expect(fixture.componentInstance.pageNumber()).toBe(1);
     expect(service.getFilteredPage).toHaveBeenLastCalledWith(

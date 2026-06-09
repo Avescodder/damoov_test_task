@@ -89,7 +89,7 @@
 
     @if (page(); as p) {
       <footer class="flex items-center justify-between gap-3 text-sm text-slate-600">
-        <span>Page {{ p.pageNumber + 1 }}{{ totalPages() ? ' of ' + totalPages() : '' }}</span>
+        <span>Page {{ p.currentPage + 1 }}{{ totalPages() ? ' of ' + totalPages() : '' }}</span>
         <div class="flex gap-2">
           <button
             type="button"

@@ -37,26 +37,20 @@ export class UsersPage {
   readonly error = signal<string | null>(null);
   readonly page = signal<UsersPageData | null>(null);
 
-  readonly totalPages = computed(() => {
-    const page = this.page();
-    return page && page.pageSize > 0 ? Math.ceil(page.total / page.pageSize) : 0;
-  });
+  readonly totalPages = computed(() => this.page()?.totalPages ?? 0);
 
   readonly rangeLabel = computed(() => {
     const page = this.page();
-    if (!page || page.total === 0) {
+    if (!page || page.totalUsers === 0) {
       return 'No users';
     }
-    const from = page.pageNumber * page.pageSize + 1;
-    const to = Math.min(from + page.rows.length - 1, page.total);
-    return `${from}–${to} of ${page.total}`;
+    const from = page.currentPage * page.pageSize + 1;
+    const to = Math.min(from + page.rows.length - 1, page.totalUsers);
+    return `${from}–${to} of ${page.totalUsers}`;
   });
 
-  readonly canGoPrevious = computed(() => this.pageNumber() > 0 && !this.loading());
-  readonly canGoNext = computed(() => {
-    const totalPages = this.totalPages();
-    return !this.loading() && (totalPages === 0 || this.pageNumber() < totalPages - 1);
-  });
+  readonly canGoPrevious = computed(() => !!this.page()?.hasPrevious && !this.loading());
+  readonly canGoNext = computed(() => !!this.page()?.hasNext && !this.loading());
 
   constructor() {
     this.searchInput

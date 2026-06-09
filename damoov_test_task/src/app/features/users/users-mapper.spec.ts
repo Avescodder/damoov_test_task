@@ -39,50 +39,67 @@ describe('buildGetFilteredPageBody', () => {
 });
 
 describe('normalizeUsersPage', () => {
-  it('reads users and totals from the primary field names', () => {
+  it('maps the paged container from the API field names', () => {
     const page = normalizeUsersPage(
-      { Users: [{ Email: 'a@b.c' }], TotalItems: 7, PageNumber: 2, PageSize: 25 },
+      {
+        Users: [{ DeviceToken: 'd1' }],
+        TotalUsers: 7,
+        TotalPages: 1,
+        CurrentPage: 2,
+        HasPreviousPage: true,
+        HasNextPage: false,
+      },
       query,
     );
     expect(page.rows).toHaveLength(1);
-    expect(page.total).toBe(7);
-    expect(page.pageNumber).toBe(2);
-  });
-
-  it('supports alternative container keys', () => {
-    const page = normalizeUsersPage({ Items: [{ Email: 'x@y.z' }], Total: 1 }, query);
-    expect(page.rows).toHaveLength(1);
-    expect(page.total).toBe(1);
+    expect(page.totalUsers).toBe(7);
+    expect(page.currentPage).toBe(2);
+    expect(page.hasPrevious).toBe(true);
+    expect(page.hasNext).toBe(false);
   });
 
   it('falls back to the requested page and row count when the server omits them', () => {
-    const page = normalizeUsersPage({ Data: [{}, {}] }, query);
-    expect(page.total).toBe(2);
-    expect(page.pageNumber).toBe(query.pageNumber);
+    const page = normalizeUsersPage({ Users: [{}, {}] }, query);
+    expect(page.totalUsers).toBe(2);
+    expect(page.currentPage).toBe(query.pageNumber);
     expect(page.pageSize).toBe(query.pageSize);
+    expect(page.hasNext).toBe(false);
   });
 
   it('handles an empty result', () => {
     const page = normalizeUsersPage(null, query);
     expect(page.rows).toEqual([]);
-    expect(page.total).toBe(0);
+    expect(page.totalUsers).toBe(0);
   });
 });
 
 describe('toUserRow', () => {
-  it('composes the display name from first and last name', () => {
-    expect(toUserRow({ FirstName: 'Ann', LastName: 'Lee' }).name).toBe('Ann Lee');
+  it('reads display fields from UserProfile and identity from DeviceToken', () => {
+    const row = toUserRow({
+      DeviceToken: 'd1',
+      Status: 'Active',
+      DateCreated: '2026-06-08T20:37:47.076Z',
+      UserProfile: {
+        FirstName: 'Ann',
+        LastName: 'Lee',
+        Email: 'ann@b.c',
+        City: 'Berlin',
+        Country: 'DE',
+      },
+    });
+    expect(row).toMatchObject({
+      id: 'd1',
+      name: 'Ann Lee',
+      email: 'ann@b.c',
+      status: 'Active',
+      location: 'Berlin, DE',
+      createdAt: '2026-06-08',
+    });
   });
 
-  it('falls back to nickname, then device token, for the name and id', () => {
-    expect(toUserRow({ Nickname: 'annie' }).name).toBe('annie');
-    const row = toUserRow({ DeviceToken: 'device-1' });
-    expect(row.name).toBe('device-1');
-    expect(row.id).toBe('device-1');
-  });
-
-  it('combines city and country into a location', () => {
-    expect(toUserRow({ City: 'Berlin', Country: 'DE' }).location).toBe('Berlin, DE');
+  it('falls back to nickname, then device token, for the name', () => {
+    expect(toUserRow({ UserProfile: { Nickname: 'annie' } }).name).toBe('annie');
+    expect(toUserRow({ DeviceToken: 'device-1' }).name).toBe('device-1');
   });
 
   it('renders a dash for missing fields', () => {
