@@ -1,48 +1,40 @@
-<section class="mx-auto flex h-full max-w-6xl flex-col gap-4 p-4 sm:p-6">
-  <header class="flex flex-wrap items-baseline justify-between gap-2">
-    <h1 class="text-xl font-semibold text-slate-900">Users</h1>
-    @if (hasToken() && page()) {
-      <span class="text-sm text-slate-500">{{ rangeLabel() }}</span>
-    }
-  </header>
-
+<section class="mx-auto flex w-full max-w-6xl flex-col gap-4 p-3 sm:p-5">
   @if (!hasToken()) {
-    <div class="flex flex-1 items-center justify-center">
-      <div class="max-w-md rounded-lg border border-amber-200 bg-amber-50 p-6 text-center">
-        <p class="font-medium text-amber-800">No access token</p>
-        <p class="mt-1 text-sm text-amber-700">
-          Open this page with an <code>access_token</code> in the URL, e.g.
-          <code class="break-all">?access_token=YOUR_JWT</code>.
-        </p>
-      </div>
+    <div class="rounded-lg border border-amber-200 bg-amber-50 p-6 text-center">
+      <p class="font-medium text-amber-800">No access token.</p>
+      <p class="mt-1 text-sm text-amber-700">
+        Pass <code class="break-all">?access_token=&lt;jwt&gt;</code> in the URL.
+      </p>
     </div>
   } @else {
-    <div class="flex flex-wrap items-center gap-3">
-      <input
-        type="search"
-        autocomplete="off"
-        placeholder="Search users…"
-        aria-label="Search users"
-        (input)="onSearch($any($event.target).value)"
-        class="w-full max-w-xs rounded-md border border-slate-300 px-3 py-2 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
-      />
-      <label class="ml-auto flex items-center gap-2 text-sm text-slate-500">
-        Per page
-        <select
-          aria-label="Users per page"
-          (change)="changePageSize(+$any($event.target).value)"
-          class="rounded-md border border-slate-300 px-2 py-2 text-sm outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
-        >
+    <!-- Toolbar: page size + total -->
+    <div class="flex flex-wrap items-center justify-between gap-3">
+      <div class="flex items-center gap-2 text-sm text-slate-600">
+        <span class="text-slate-500">Page size:</span>
+        <div class="inline-flex overflow-hidden rounded-md border border-slate-300">
           @for (size of pageSizes; track size) {
-            <option [value]="size" [selected]="size === pageSize()">{{ size }}</option>
+            <button
+              type="button"
+              (click)="changePageSize(size)"
+              [attr.aria-pressed]="size === pageSize()"
+              class="border-l border-slate-300 px-3 py-1.5 font-medium first:border-l-0 hover:bg-slate-50"
+              [class.bg-slate-900]="size === pageSize()"
+              [class.text-white]="size === pageSize()"
+              [class.hover:bg-slate-900]="size === pageSize()"
+            >
+              {{ size }}
+            </button>
           }
-        </select>
-      </label>
+        </div>
+      </div>
+      <span class="text-sm text-slate-500">Total: {{ totalUsers() }} users</span>
     </div>
 
+    <!-- Error banner -->
     @if (error(); as message) {
       <div
-        class="flex items-center justify-between gap-3 rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"
+        class="flex flex-wrap items-center justify-between gap-3 rounded-md border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"
+        role="alert"
       >
         <span>{{ message }}</span>
         <button
@@ -55,50 +47,42 @@
       </div>
     }
 
-    <div class="relative flex-1 rounded-lg border border-slate-200 bg-white">
-      @if (loading()) {
-        <div class="absolute inset-x-0 top-0 h-0.5 overflow-hidden rounded-t-lg">
-          <div class="h-full w-1/3 animate-pulse bg-slate-400"></div>
+    <!-- Loading -->
+    @if (loading()) {
+      <div class="flex items-center justify-center py-16" role="status" aria-label="Loading">
+        <span class="spinner"></span>
+      </div>
+    } @else if (!error()) {
+      @if (isEmpty()) {
+        <div class="flex items-center justify-center py-16 text-sm text-slate-500">
+          No users found
         </div>
-      }
-
-      @if (page(); as p) {
-        @if (p.rows.length > 0) {
-          <app-users-table [rows]="p.rows" />
-        } @else if (!loading()) {
-          <div class="flex h-40 items-center justify-center text-sm text-slate-500">
-            No users match the current filters.
-          </div>
-        }
-      } @else if (loading()) {
-        <div class="flex h-40 items-center justify-center text-sm text-slate-500">
-          Loading users…
+      } @else {
+        <div class="rounded-lg border border-slate-200 bg-white">
+          <app-users-table [users]="users()" />
         </div>
-      }
-    </div>
 
-    @if (page(); as p) {
-      <footer class="flex items-center justify-between gap-3 text-sm text-slate-600">
-        <span>Page {{ p.currentPage + 1 }}{{ totalPages() ? ' of ' + totalPages() : '' }}</span>
-        <div class="flex gap-2">
+        <!-- Pagination -->
+        <footer class="flex items-center justify-between gap-3 text-sm text-slate-600">
           <button
             type="button"
-            (click)="previousPage()"
-            [disabled]="!canGoPrevious()"
+            (click)="prevPage()"
+            [disabled]="!hasPrev()"
             class="rounded-md border border-slate-300 px-3 py-1.5 font-medium hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Previous
+            ← Prev
           </button>
+          <span>Page {{ pageNumber() }} of {{ totalPages() || 1 }}</span>
           <button
             type="button"
             (click)="nextPage()"
-            [disabled]="!canGoNext()"
+            [disabled]="!hasNext()"
             class="rounded-md border border-slate-300 px-3 py-1.5 font-medium hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-40"
           >
-            Next
+            Next →
           </button>
-        </div>
-      </footer>
+        </footer>
+      }
     }
   }
 </section>

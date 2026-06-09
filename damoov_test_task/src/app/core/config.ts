@@ -11,3 +11,9 @@ export const API_BASE_URL = new InjectionToken<string>('API_BASE_URL', {
 });
 
 export const API_V1 = '/v1';
+
+/**
+ * Application the widget lists users for. GetFilteredPage requires at least one
+ * ApplicationId in the request body; this is the one the host app is scoped to.
+ */
+export const APPLICATION_ID = '4603BEAE-E28A-4E6C-8FF9-3CA6DF360FD3';

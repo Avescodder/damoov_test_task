@@ -1,13 +1,19 @@
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { catchError, debounceTime, distinctUntilChanged, of, Subject, switchMap, tap } from 'rxjs';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  DestroyRef,
+  inject,
+  signal,
+} from '@angular/core';
 import { AccessTokenStore } from '../../../core/auth/access-token';
 import { describeRequestError } from '../../../core/request-error';
-import { UsersPage as UsersPageData, UsersQuery } from '../user.model';
+import { User } from '../user.model';
 import { UsersService } from '../users-service';
 import { UsersTable } from '../users-table/users-table';
 
-const PAGE_SIZES = [10, 25, 50, 100] as const;
+const PAGE_SIZES = [10, 20, 50] as const;
 
 @Component({
   selector: 'app-users-page',
@@ -19,106 +25,82 @@ const PAGE_SIZES = [10, 25, 50, 100] as const;
 export class UsersPage {
   private readonly usersService = inject(UsersService);
   private readonly tokenStore = inject(AccessTokenStore);
-
-  private readonly searchInput = new Subject<string>();
-  private readonly reload = new Subject<void>();
+  private readonly destroyRef = inject(DestroyRef);
 
   readonly pageSizes = PAGE_SIZES;
+
+  readonly token = this.tokenStore.token;
   readonly hasToken = this.tokenStore.hasToken;
 
-  readonly pageNumber = signal(0);
-  readonly pageSize = signal<number>(PAGE_SIZES[1]);
-  readonly searchTerm = signal('');
-
+  readonly users = signal<User[]>([]);
   readonly loading = signal(false);
   readonly error = signal<string | null>(null);
-  readonly page = signal<UsersPageData | null>(null);
+  readonly pageNumber = signal(1);
+  readonly pageSize = signal<number>(20);
+  readonly totalUsers = signal(0);
+  readonly totalPages = signal(0);
+  readonly hasNext = signal(false);
+  readonly hasPrev = signal(false);
 
-  readonly totalPages = computed(() => this.page()?.totalPages ?? 0);
-
-  readonly rangeLabel = computed(() => {
-    const page = this.page();
-    if (!page || page.totalUsers === 0) {
-      return 'No users';
-    }
-    const from = page.currentPage * page.pageSize + 1;
-    const to = Math.min(from + page.rows.length - 1, page.totalUsers);
-    return `${from}–${to} of ${page.totalUsers}`;
-  });
-
-  readonly canGoPrevious = computed(() => !!this.page()?.hasPrevious && !this.loading());
-  readonly canGoNext = computed(() => !!this.page()?.hasNext && !this.loading());
+  readonly isEmpty = computed(() => !this.loading() && !this.error() && this.users().length === 0);
 
   constructor() {
-    this.searchInput
-      .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed())
-      .subscribe((term) => {
-        this.searchTerm.set(term);
-        this.pageNumber.set(0);
-        this.reload.next();
-      });
-
-    this.reload
-      .pipe(
-        tap(() => {
-          this.loading.set(true);
-          this.error.set(null);
-        }),
-        switchMap(() =>
-          this.usersService.getFilteredPage(this.currentQuery()).pipe(
-            catchError((error: unknown) => {
-              this.error.set(describeRequestError(error));
-              return of(null);
-            }),
-          ),
-        ),
-        takeUntilDestroyed(),
-      )
-      .subscribe((page) => {
-        if (page) {
-          this.page.set(page);
-        }
-        this.loading.set(false);
-      });
-
     if (this.hasToken()) {
-      this.reload.next();
+      this.fetchUsers();
     }
   }
 
-  onSearch(term: string): void {
-    this.searchInput.next(term);
+  fetchUsers(): void {
+    if (!this.hasToken()) {
+      return;
+    }
+    this.loading.set(true);
+    this.error.set(null);
+
+    this.usersService
+      .getFilteredPage({ pageNumber: this.pageNumber(), pageSize: this.pageSize() })
+      .pipe(takeUntilDestroyed(this.destroyRef))
+      .subscribe({
+        next: (page) => {
+          this.users.set(page.users);
+          this.totalUsers.set(page.totalUsers);
+          this.totalPages.set(page.totalPages);
+          this.hasNext.set(page.hasNext);
+          this.hasPrev.set(page.hasPrevious);
+          this.pageNumber.set(page.currentPage);
+          this.loading.set(false);
+        },
+        error: (err: unknown) => {
+          this.error.set(describeRequestError(err));
+          this.loading.set(false);
+        },
+      });
   }
 
   changePageSize(size: number): void {
-    this.pageSize.set(size);
-    this.pageNumber.set(0);
-    this.reload.next();
-  }
-
-  previousPage(): void {
-    if (this.canGoPrevious()) {
-      this.pageNumber.update((value) => value - 1);
-      this.reload.next();
+    if (size === this.pageSize()) {
+      return;
     }
+    this.pageSize.set(size);
+    this.pageNumber.set(1);
+    this.fetchUsers();
   }
 
   nextPage(): void {
-    if (this.canGoNext()) {
-      this.pageNumber.update((value) => value + 1);
-      this.reload.next();
+    if (this.hasNext() && !this.loading()) {
+      this.pageNumber.update((n) => n + 1);
+      this.fetchUsers();
+    }
+  }
+
+  prevPage(): void {
+    if (this.hasPrev() && !this.loading()) {
+      this.pageNumber.update((n) => n - 1);
+      this.fetchUsers();
     }
   }
 
   retry(): void {
-    this.reload.next();
-  }
-
-  private currentQuery(): UsersQuery {
-    return {
-      pageNumber: this.pageNumber(),
-      pageSize: this.pageSize(),
-      searchTerm: this.searchTerm(),
-    };
+    this.fetchUsers();
   }
 }
