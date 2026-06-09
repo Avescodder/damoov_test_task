@@ -6,34 +6,22 @@ import {
   toUserRow,
 } from './users-mapper';
 
-const query: UsersQuery = { companyIds: ['co-1'], pageNumber: 2, pageSize: 25 };
+const query: UsersQuery = { pageNumber: 2, pageSize: 25 };
 
 describe('buildGetFilteredPageBody', () => {
-  it('maps the query to the API contract and trims the search term', () => {
-    const body = buildGetFilteredPageBody({
-      companyIds: ['co-1', 'co-2'],
-      pageNumber: 1,
-      pageSize: 50,
-      searchTerm: '  ann  ',
-    });
+  it('maps the query to the minimal API body and trims the search term', () => {
+    const body = buildGetFilteredPageBody({ pageNumber: 1, pageSize: 50, searchTerm: '  ann  ' });
     expect(body).toMatchObject({
-      CompanyIds: ['co-1', 'co-2'],
       PageNumber: 1,
       PageSize: 50,
       IncludeAccountInfo: true,
-      ShowInactiveUsers: true,
       SearchTerm: 'ann',
     });
   });
 
   it('omits an empty search term', () => {
     expect(
-      buildGetFilteredPageBody({
-        companyIds: ['co-1'],
-        pageNumber: 0,
-        pageSize: 25,
-        searchTerm: '   ',
-      })['SearchTerm'],
+      buildGetFilteredPageBody({ pageNumber: 0, pageSize: 25, searchTerm: '   ' })['SearchTerm'],
     ).toBeUndefined();
   });
 });

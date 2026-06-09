@@ -43,12 +43,9 @@ export interface FilteredUsersResult {
 }
 
 export interface UsersQuery {
-  companyIds: string[];
   pageNumber: number;
   pageSize: number;
   searchTerm?: string;
-  showInactiveUsers?: boolean;
-  sort?: string;
 }
 
 /** Flattened, display-ready row. `raw` keeps the original item for drill-down. */

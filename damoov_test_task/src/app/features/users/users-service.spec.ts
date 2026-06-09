@@ -36,13 +36,12 @@ describe('UsersService', () => {
   it('posts the filter body and returns a normalized page', () => {
     let result: UsersPage | undefined;
     service
-      .getFilteredPage({ companyIds: ['co-1'], pageNumber: 1, pageSize: 25, searchTerm: ' ann ' })
+      .getFilteredPage({ pageNumber: 1, pageSize: 25, searchTerm: ' ann ' })
       .subscribe((page) => (result = page));
 
     const req = httpMock.expectOne(ENDPOINT);
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toMatchObject({
-      CompanyIds: ['co-1'],
       PageNumber: 1,
       PageSize: 25,
       SearchTerm: 'ann',
@@ -65,7 +64,7 @@ describe('UsersService', () => {
   it('raises the API error message when the envelope reports a failure', () => {
     let error: Error | undefined;
     service
-      .getFilteredPage({ companyIds: ['co-1'], pageNumber: 0, pageSize: 25 })
+      .getFilteredPage({ pageNumber: 0, pageSize: 25 })
       .subscribe({ error: (e: Error) => (error = e) });
 
     httpMock.expectOne(ENDPOINT).flush(
