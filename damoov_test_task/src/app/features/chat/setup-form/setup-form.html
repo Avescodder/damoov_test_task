@@ -1,0 +1,42 @@
+<div class="flex min-h-screen items-center justify-center p-4">
+  <form
+    (submit)="$event.preventDefault(); submit()"
+    class="w-full max-w-md rounded-xl border border-slate-200 bg-white p-6 shadow-sm"
+  >
+    <h1 class="text-lg font-semibold text-slate-900">Telematics agent</h1>
+    <p class="mt-1 text-sm text-slate-500">
+      Connect with your access token to search and manage users by chat.
+    </p>
+
+    <label class="mt-5 block text-sm font-medium text-slate-700">
+      Access token
+      <textarea
+        rows="3"
+        required
+        placeholder="eyJhbGciOi…"
+        [value]="token()"
+        (input)="token.set($any($event.target).value)"
+        class="mt-1 w-full resize-none rounded-md border border-slate-300 px-3 py-2 font-mono text-xs outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+      ></textarea>
+    </label>
+
+    <label class="mt-4 block text-sm font-medium text-slate-700">
+      Application ID
+      <input
+        type="text"
+        required
+        [value]="applicationId()"
+        (input)="applicationId.set($any($event.target).value)"
+        class="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 font-mono text-xs outline-none focus:border-slate-400 focus:ring-2 focus:ring-slate-200"
+      />
+    </label>
+
+    <button
+      type="submit"
+      [disabled]="!valid()"
+      class="mt-6 w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-40"
+    >
+      Start chat
+    </button>
+  </form>
+</div>
