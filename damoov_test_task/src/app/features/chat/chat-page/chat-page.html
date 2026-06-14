@@ -1,0 +1,5 @@
+@if (started()) {
+  <app-chat-view />
+} @else {
+  <app-setup-form (start)="begin($event)" />
+}
