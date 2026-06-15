@@ -15,7 +15,9 @@ _openai: AsyncOpenAI | None = None
 def _client() -> AsyncOpenAI:
     global _openai
     if _openai is None:
-        _openai = AsyncOpenAI(api_key=settings.openai_api_key)
+        _openai = AsyncOpenAI(
+            api_key=settings.deepseek_api_key, base_url=settings.deepseek_base_url
+        )
     return _openai
 
 
