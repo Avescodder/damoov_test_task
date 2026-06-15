@@ -65,7 +65,11 @@ def test_write_tool_waits_for_confirmation_then_runs():
         ],
         [_chunk(content='Done, the user is now Inactive.')],
     ]
-    telematics = SimpleNamespace(set_user_status=AsyncMock(return_value={}))
+    updated_row = {'DeviceToken': 'f925d077-xyz', 'Status': 'Inactive'}
+    telematics = SimpleNamespace(
+        set_user_status=AsyncMock(return_value={}),
+        find_user=AsyncMock(return_value=updated_row),
+    )
     session = _session(telematics)
     events, emit = _collect()
     loop = AgentLoop(_FakeOpenAI(responses), session, emit)
@@ -82,6 +86,29 @@ def test_write_tool_waits_for_confirmation_then_runs():
     telematics.set_user_status.assert_awaited_once_with('f925d077-xyz', 'Inactive')
     assert session.pending is None
     assert any(event['type'] == 'token' for event in events)
+
+    updated = [event for event in events if event['type'] == 'user_updated']
+    assert updated and updated[0]['row'] == updated_row
+
+
+def test_approved_delete_emits_user_deleted():
+    responses = [
+        [_chunk(tool_call=_tool_call(0, 'call_1', 'delete_user', '{"device_token": "f925d077-xyz"}'))],
+        [_chunk(content='The user has been deleted.')],
+    ]
+    telematics = SimpleNamespace(delete_user=AsyncMock(return_value={}))
+    session = _session(telematics)
+    events, emit = _collect()
+    loop = AgentLoop(_FakeOpenAI(responses), session, emit)
+
+    asyncio.run(loop.run('Delete user f925d077-xyz'))
+    confirmation_id = next(e for e in events if e['type'] == 'confirmation')['confirmationId']
+
+    asyncio.run(loop.confirm(confirmation_id, True))
+
+    telematics.delete_user.assert_awaited_once_with('f925d077-xyz')
+    deleted = [event for event in events if event['type'] == 'user_deleted']
+    assert deleted and deleted[0]['deviceToken'] == 'f925d077-xyz'
 
 
 def test_declined_write_is_not_executed():

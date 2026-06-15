@@ -41,6 +41,7 @@ class AgentLoop:
             await self._emit({'type': 'tool', 'name': write.name, 'status': 'running'})
             try:
                 result = await tools.run_tool(self._session, write.name, write.arguments, self._emit)
+                await self._emit_change(write)
             except TelematicsError as error:
                 result = f'Action failed: {error}'
             await self._emit({'type': 'tool', 'name': write.name, 'status': 'done'})
@@ -118,6 +119,20 @@ class AgentLoop:
                 'details': details,
             }
         )
+
+    async def _emit_change(self, write: PendingWrite) -> None:
+        token = write.arguments.get('device_token')
+        if not token:
+            return
+        try:
+            if write.name == 'delete_user':
+                await self._emit({'type': 'user_deleted', 'deviceToken': token})
+            else:
+                row = await self._session.client.find_user(device_token=token)
+                if row:
+                    await self._emit({'type': 'user_updated', 'row': row})
+        except TelematicsError:
+            pass
 
     async def _stream_completion(self) -> tuple[str, list[dict[str, Any]]]:
         stream = await self._client.chat.completions.create(

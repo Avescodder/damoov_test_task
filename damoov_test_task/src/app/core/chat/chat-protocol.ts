@@ -40,6 +40,16 @@ export interface UsersEvent {
   rows: User[];
 }
 
+export interface UserUpdatedEvent {
+  type: 'user_updated';
+  row: User;
+}
+
+export interface UserDeletedEvent {
+  type: 'user_deleted';
+  deviceToken: string;
+}
+
 export interface ConfirmationEvent {
   type: 'confirmation';
   confirmationId: string;
@@ -61,6 +71,8 @@ export type ServerEvent =
   | TokenEvent
   | ToolEvent
   | UsersEvent
+  | UserUpdatedEvent
+  | UserDeletedEvent
   | ConfirmationEvent
   | DoneEvent
   | ErrorEvent;

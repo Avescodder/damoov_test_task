@@ -8,12 +8,12 @@ import {
   viewChild,
 } from '@angular/core';
 import { ChatStore } from '../chat-store';
-import { UsersTable } from '../../users/users-table/users-table';
+import { UsersPanel } from '../users-panel/users-panel';
 
 @Component({
   selector: 'app-chat-view',
   changeDetection: ChangeDetectionStrategy.OnPush,
-  imports: [UsersTable],
+  imports: [UsersPanel],
   templateUrl: './chat-view.html',
 })
 export class ChatView {
