@@ -19,6 +19,8 @@
           [class.changed-row]="isChanged(user)"
           [class.flash-row]="isFlashing(user)"
           [class.deleting-row]="isDeleting(user)"
+          [class.cursor-pointer]="selectable()"
+          (click)="select(user)"
           class="border-b border-slate-100 hover:bg-slate-100/70"
         >
           <td class="px-3 py-2.5">

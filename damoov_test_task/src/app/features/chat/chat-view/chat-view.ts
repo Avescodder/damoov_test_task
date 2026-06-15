@@ -8,6 +8,7 @@ import {
   viewChild,
 } from '@angular/core';
 import { ChatStore } from '../chat-store';
+import { User } from '../../users/user.model';
 import { UsersPanel } from '../users-panel/users-panel';
 
 @Component({
@@ -19,6 +20,7 @@ import { UsersPanel } from '../users-panel/users-panel';
 export class ChatView {
   private readonly store = inject(ChatStore);
   private readonly scroll = viewChild<ElementRef<HTMLElement>>('scroll');
+  private readonly composer = viewChild<ElementRef<HTMLTextAreaElement>>('composer');
 
   readonly messages = this.store.messages;
   readonly activity = this.store.activity;
@@ -49,6 +51,11 @@ export class ChatView {
     }
     event.preventDefault();
     this.send();
+  }
+
+  pickUser(user: User): void {
+    this.draft.set(`Show user ${user.DeviceToken}`);
+    this.composer()?.nativeElement.focus();
   }
 
   send(): void {

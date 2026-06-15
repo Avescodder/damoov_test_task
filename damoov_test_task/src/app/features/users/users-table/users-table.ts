@@ -1,5 +1,5 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { User } from '../user.model';
 
 const EMPTY = '—';
@@ -16,8 +16,16 @@ export class UsersTable {
   readonly changed = input<ReadonlySet<string>>(new Set());
   readonly flashing = input<ReadonlySet<string>>(new Set());
   readonly deleting = input<ReadonlySet<string>>(new Set());
+  readonly selectable = input(false);
+  readonly rowSelect = output<User>();
 
   readonly empty = EMPTY;
+
+  select(user: User): void {
+    if (this.selectable()) {
+      this.rowSelect.emit(user);
+    }
+  }
 
   isChanged(user: User): boolean {
     return this.changed().has(user.DeviceToken);
