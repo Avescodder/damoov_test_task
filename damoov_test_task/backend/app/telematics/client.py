@@ -39,7 +39,7 @@ class TelematicsClient:
         resp = await self._http.post('/v1/Management/users/GetFilteredPage', json=body)
         return self._unwrap(resp) or {}
 
-    async def find_user(self, **filters: str | None) -> dict[str, Any]:
+    async def find_user(self, **filters: str | None) -> dict[str, Any] | None:
         params: dict[str, str] = {'IncludeAccountInfo': 'true'}
         keys = {
             'device_token': 'DeviceToken',
@@ -52,7 +52,10 @@ class TelematicsClient:
             if value:
                 params[keys[key]] = value
         resp = await self._http.get('/v1/Management/users/find', params=params)
-        return self._unwrap(resp) or {}
+        result = self._unwrap(resp)
+        if isinstance(result, list):
+            result = result[0] if result else None
+        return result if isinstance(result, dict) else None
 
     async def count_users(
         self,
