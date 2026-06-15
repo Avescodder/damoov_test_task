@@ -2,8 +2,7 @@
 
 /*
  * The app is designed to be embedded in an iframe, so its height must be
- * driven by content — no `height: 100%`/`100vh` and no `position: fixed`
- * anywhere. The host sizes the iframe; we just flow naturally.
+ * driven by content. The host sizes the iframe;
  */
 html,
 body {

@@ -15,7 +15,6 @@ export class UsersTable {
 
   readonly empty = EMPTY;
 
-  /** First 8 characters of the device token; the full value goes in `title`. */
   tokenShort(user: User): string {
     return user.DeviceToken ? user.DeviceToken.slice(0, 8) : EMPTY;
   }
@@ -24,7 +23,6 @@ export class UsersTable {
     return user.UserFields?.[0]?.ClientId || EMPTY;
   }
 
-  /** Prefer the human-readable model, fall back to OS type, then a dash. */
   device(user: User): string {
     return user.MobileDevice?.DeviceModel || user.MobileDevice?.OsType || EMPTY;
   }
