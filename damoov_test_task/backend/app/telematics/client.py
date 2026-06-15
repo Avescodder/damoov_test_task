@@ -14,6 +14,7 @@ class TelematicsClient:
             timeout=httpx.Timeout(30.0),
             headers={'Authorization': f'Bearer {token}', 'Content-Type': 'application/json'},
         )
+        self._STATUS_CODES = {'Active': 1, 'Inactive': 2}
 
     async def aclose(self) -> None:
         await self._http.aclose()
@@ -35,12 +36,12 @@ class TelematicsClient:
         if search_term:
             body['SearchTerm'] = search_term
         if activity_status:
-            body['ActivityStatus'] = activity_status
+            body['ActivityStatus'] = [activity_status]
         resp = await self._http.post('/v1/Management/users/GetFilteredPage', json=body)
         return self._unwrap(resp) or {}
 
     async def find_user(self, **filters: str | None) -> dict[str, Any] | None:
-        params: dict[str, str] = {'IncludeAccountInfo': 'true'}
+        params: dict[str, str] = {'IncludeAccountInfo': 'true', 'ShowInactiveUsers': 'true'}
         keys = {
             'device_token': 'DeviceToken',
             'email': 'Email',
@@ -70,20 +71,16 @@ class TelematicsClient:
         if is_tracking_enabled is not None:
             body['IsTrackingEnabled'] = is_tracking_enabled
         if include_deactivated is not None:
-            body['IncludeDeactivated'] = include_deactivated
+            body['IncludeDeacivated'] = include_deactivated
         result = self._unwrap(await self._http.post('/v1/Management/users/count', json=body))
-        if isinstance(result, dict):
-            for key in ('Count', 'TotalUsers', 'Total'):
-                if isinstance(result.get(key), int):
-                    return result[key]
-            return 0
         return result if isinstance(result, int) else 0
 
     async def set_user_status(self, device_token: str, status: str) -> dict[str, Any]:
+        code = self._STATUS_CODES.get(status)
         resp = await self._http.put(
             '/v1/Management/users',
             headers={'UserDeviceToken': device_token},
-            json={'Status': status},
+            json={'Status': code},
         )
         return self._unwrap(resp) or {}
 

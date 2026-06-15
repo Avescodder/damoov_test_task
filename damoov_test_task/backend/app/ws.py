@@ -57,7 +57,7 @@ async def chat_socket(websocket: WebSocket) -> None:
                 elif kind == 'confirm':
                     await loop.confirm(message['confirmationId'], message['approved'])
                 await emit({'type': 'done'})
-            except Exception as error:  # noqa: BLE001 - keep the socket alive
+            except Exception as error:  # noqa: BLE001 keep the socket alive
                 await emit({'type': 'error', 'message': str(error)})
     except WebSocketDisconnect:
         pass

@@ -58,12 +58,12 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
         'type': 'function',
         'function': {
             'name': 'set_user_status',
-            'description': 'Set a user Active or Inactive.',
+            'description': 'Set a user Active or Deactivated.',
             'parameters': {
                 'type': 'object',
                 'properties': {
                     'device_token': {'type': 'string'},
-                    'status': {'type': 'string', 'enum': ['Active', 'Inactive']},
+                    'status': {'type': 'string', 'enum': ['Active', 'Deactivated']},
                 },
                 'required': ['device_token', 'status'],
             },
