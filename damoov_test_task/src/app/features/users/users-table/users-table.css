@@ -1,0 +1,31 @@
+tr.changed-row {
+  background-color: rgb(236 253 245);
+}
+
+tr.flash-row {
+  animation: row-flash 1.5s ease-out;
+}
+
+@keyframes row-flash {
+  from {
+    background-color: rgb(167 243 208);
+  }
+  to {
+    background-color: rgb(236 253 245);
+  }
+}
+
+tr.deleting-row {
+  text-decoration: line-through;
+  opacity: 0.45;
+  transition:
+    opacity 0.45s ease,
+    background-color 0.45s ease;
+  background-color: rgb(254 242 242);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  tr.flash-row {
+    animation: none;
+  }
+}

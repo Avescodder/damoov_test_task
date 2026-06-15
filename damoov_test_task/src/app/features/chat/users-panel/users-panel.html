@@ -1,0 +1,21 @@
+<div class="flex h-screen flex-col border-r border-slate-200 bg-white">
+  <header class="flex items-center justify-between border-b border-slate-200 px-4 py-3">
+    <h2 class="text-sm font-semibold text-slate-900">Users</h2>
+    <span class="text-xs text-slate-500">{{ users().length }} loaded</span>
+  </header>
+
+  @if (users().length) {
+    <div class="flex-1 overflow-auto">
+      <app-users-table
+        [users]="users()"
+        [changed]="changed()"
+        [flashing]="flashing()"
+        [deleting]="deleting()"
+      />
+    </div>
+  } @else {
+    <div class="flex flex-1 items-center justify-center p-6 text-center text-sm text-slate-500">
+      No users loaded yet. Ask the agent to list users and they'll appear here.
+    </div>
+  }
+</div>

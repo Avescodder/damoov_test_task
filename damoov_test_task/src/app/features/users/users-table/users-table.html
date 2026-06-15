@@ -14,7 +14,13 @@
     </thead>
     <tbody>
       @for (user of users(); track user.DeviceToken; let even = $even) {
-        <tr [class.bg-slate-50]="even" class="border-b border-slate-100 hover:bg-slate-100/70">
+        <tr
+          [class.bg-slate-50]="even"
+          [class.changed-row]="isChanged(user)"
+          [class.flash-row]="isFlashing(user)"
+          [class.deleting-row]="isDeleting(user)"
+          class="border-b border-slate-100 hover:bg-slate-100/70"
+        >
           <td class="px-3 py-2.5">
             <span class="font-mono text-xs text-slate-700" [title]="user.DeviceToken">
               {{ tokenShort(user) }}

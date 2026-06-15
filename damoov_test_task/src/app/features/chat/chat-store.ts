@@ -8,7 +8,7 @@ export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   text: string;
-  users?: User[];
+  note?: string;
   streaming?: boolean;
 }
 
@@ -21,6 +21,9 @@ const TOOL_LABELS: Record<string, string> = {
   delete_user: 'Deleting the user',
 };
 
+const FLASH_MS = 1500;
+const FADE_MS = 450;
+
 @Injectable({ providedIn: 'root' })
 export class ChatStore {
   private readonly ws = inject(WebSocketService);
@@ -32,6 +35,11 @@ export class ChatStore {
   readonly busy = signal(false);
   readonly started = signal(false);
   readonly connected = computed(() => this.ws.status() === 'open');
+
+  readonly panelUsers = signal<User[]>([]);
+  readonly changed = signal<ReadonlySet<string>>(new Set());
+  readonly flashing = signal<ReadonlySet<string>>(new Set());
+  readonly deleting = signal<ReadonlySet<string>>(new Set());
 
   constructor() {
     this.ws.events.pipe(takeUntilDestroyed()).subscribe((event) => this.handle(event));
@@ -73,8 +81,15 @@ export class ChatStore {
         );
         break;
       case 'users':
-        this.assistant().users = event.rows;
+        this.panelUsers.set(event.rows);
+        this.assistant().note = `Showed ${event.rows.length} users in the panel on the left.`;
         this.messages.update((list) => [...list]);
+        break;
+      case 'user_updated':
+        this.mergeUser(event.row);
+        break;
+      case 'user_deleted':
+        this.removeUser(event.deviceToken);
         break;
       case 'confirmation':
         this.activity.set(null);
@@ -92,6 +107,31 @@ export class ChatStore {
         this.push({ role: 'assistant', text: `Something went wrong: ${event.message}` });
         break;
     }
+  }
+
+  private mergeUser(row: User): void {
+    const token = row.DeviceToken;
+    this.panelUsers.update((list) => {
+      const index = list.findIndex((user) => user.DeviceToken === token);
+      if (index === -1) {
+        return [row, ...list];
+      }
+      const next = [...list];
+      next[index] = row;
+      return next;
+    });
+    this.changed.update((tokens) => new Set(tokens).add(token));
+    this.flashing.update((tokens) => new Set(tokens).add(token));
+    setTimeout(() => this.flashing.update((tokens) => without(tokens, token)), FLASH_MS);
+  }
+
+  private removeUser(token: string): void {
+    this.deleting.update((tokens) => new Set(tokens).add(token));
+    this.changed.update((tokens) => without(tokens, token));
+    setTimeout(() => {
+      this.panelUsers.update((list) => list.filter((user) => user.DeviceToken !== token));
+      this.deleting.update((tokens) => without(tokens, token));
+    }, FADE_MS);
   }
 
   private appendDelta(delta: string): void {
@@ -125,4 +165,10 @@ export class ChatStore {
   private push(message: Omit<ChatMessage, 'id'>): void {
     this.messages.update((list) => [...list, { id: crypto.randomUUID(), ...message }]);
   }
+}
+
+function without(tokens: ReadonlySet<string>, token: string): ReadonlySet<string> {
+  const next = new Set(tokens);
+  next.delete(token);
+  return next;
 }

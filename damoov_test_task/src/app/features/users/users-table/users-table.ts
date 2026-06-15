@@ -9,12 +9,29 @@ const EMPTY = '—';
   changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [DatePipe],
   templateUrl: './users-table.html',
+  styleUrl: './users-table.css',
 })
 export class UsersTable {
   readonly users = input.required<User[]>();
+  readonly changed = input<ReadonlySet<string>>(new Set());
+  readonly flashing = input<ReadonlySet<string>>(new Set());
+  readonly deleting = input<ReadonlySet<string>>(new Set());
 
   readonly empty = EMPTY;
 
+  isChanged(user: User): boolean {
+    return this.changed().has(user.DeviceToken);
+  }
+
+  isFlashing(user: User): boolean {
+    return this.flashing().has(user.DeviceToken);
+  }
+
+  isDeleting(user: User): boolean {
+    return this.deleting().has(user.DeviceToken);
+  }
+
+  /** First 8 characters of the device token; the full value goes in `title`. */
   tokenShort(user: User): string {
     return user.DeviceToken ? user.DeviceToken.slice(0, 8) : EMPTY;
   }
