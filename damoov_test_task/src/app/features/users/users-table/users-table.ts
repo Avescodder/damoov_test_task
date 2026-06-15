@@ -40,7 +40,6 @@ export class UsersTable {
     return user.UserFields?.[0]?.ClientId || EMPTY;
   }
 
-  /** Prefer the human-readable model, fall back to OS type, then a dash. */
   device(user: User): string {
     return user.MobileDevice?.DeviceModel || user.MobileDevice?.OsType || EMPTY;
   }
