@@ -11,6 +11,8 @@
         [changed]="changed()"
         [flashing]="flashing()"
         [deleting]="deleting()"
+        [selectable]="true"
+        (rowSelect)="userSelect.emit($event)"
       />
     </div>
   } @else {

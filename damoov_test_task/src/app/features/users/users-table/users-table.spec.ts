@@ -67,4 +67,30 @@ describe('UsersTable', () => {
     expect(component.isActive(makeUser({ Status: 'Active' }))).toBe(true);
     expect(component.isActive(makeUser({ Status: 'Inactive' }))).toBe(false);
   });
+
+  it('emits the full user on row click when selectable', async () => {
+    const fixture = TestBed.createComponent(UsersTable);
+    const user = makeUser({ DeviceToken: 'f925d077-c835-40c1-8e38-341726916fd2' });
+    fixture.componentRef.setInput('users', [user]);
+    fixture.componentRef.setInput('selectable', true);
+    let picked: User | undefined;
+    fixture.componentInstance.rowSelect.subscribe((value) => (picked = value));
+    await fixture.whenStable();
+
+    fixture.nativeElement.querySelector('tbody tr').click();
+
+    expect(picked?.DeviceToken).toBe('f925d077-c835-40c1-8e38-341726916fd2');
+  });
+
+  it('does not emit on row click when not selectable', async () => {
+    const fixture = TestBed.createComponent(UsersTable);
+    fixture.componentRef.setInput('users', [makeUser()]);
+    let picked: User | undefined;
+    fixture.componentInstance.rowSelect.subscribe((value) => (picked = value));
+    await fixture.whenStable();
+
+    fixture.nativeElement.querySelector('tbody tr').click();
+
+    expect(picked).toBeUndefined();
+  });
 });

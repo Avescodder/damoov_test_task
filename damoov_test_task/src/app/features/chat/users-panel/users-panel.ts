@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, output } from '@angular/core';
 import { ChatStore } from '../chat-store';
+import { User } from '../../users/user.model';
 import { UsersTable } from '../../users/users-table/users-table';
 
 @Component({
@@ -10,6 +11,8 @@ import { UsersTable } from '../../users/users-table/users-table';
 })
 export class UsersPanel {
   private readonly store = inject(ChatStore);
+
+  readonly userSelect = output<User>();
 
   readonly users = this.store.panelUsers;
   readonly changed = this.store.changed;
