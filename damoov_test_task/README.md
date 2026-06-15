@@ -7,13 +7,13 @@ in the UI. The original user-list widget still lives at `/users`.
 
 ## Run
 
-Backend (needs a DeepSeek key):
+Backend (needs a Groq key):
 
 ```bash
 cd backend
 python -m venv .venv && . .venv/bin/activate
 pip install -r requirements.txt
-cp .env.example .env   # set DEEPSEEK_API_KEY
+cp .env.example .env   # set GROQ_API_KEY
 uvicorn app.main:app --port 8000
 ```
 
