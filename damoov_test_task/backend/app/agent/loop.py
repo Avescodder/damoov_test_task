@@ -121,8 +121,8 @@ class AgentLoop:
 
     async def _stream_completion(self) -> tuple[str, list[dict[str, Any]]]:
         stream = await self._client.chat.completions.create(
-            model=settings.openai_model,
-            temperature=settings.openai_temperature,
+            model=settings.deepseek_model,
+            temperature=settings.deepseek_temperature,
             messages=self._session.history,
             tools=tools.TOOL_SCHEMAS,
             stream=True,
